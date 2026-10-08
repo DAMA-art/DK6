@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    restart: always
+    ports:
+      - "8267:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - etc_influxdb_data:/etc/influxdb2
+    environment:
+      - TZ=Europe/Moscow
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=PL
+      - DOCKER_INFLUXDB_INIT_BUCKET=metrics
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=pgSRKdz5HUxPrVuuFBg86JpnZWR0VIdE2X_DE2cQGNm5bkCBvk3eHf8boIpMsCHARM8nolgyMhrgblku0aQMEg==
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+    networks:
+      - monitoring_system_p1
+
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    restart: always
+    networks:
+      - monitoring_system_p1
+    depends_on:
+      - influxdb
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/rootfs/sys:ro
+      - /proc:/rootfs/proc:ro
+      - /etc:/rootfs/etc:ro
+    environment:
+      - TZ=Europe/Moscow
+      - HOST_PROC=/rootfs/proc
+      - HOST_SYS=/rootfs/sys
+      - HOST_ETC=/rootfs/etc
+    privileged: true
+
+volumes:
+  influxdb_data:
+  etc_influxdb_data:
+
+networks:
+  monitoring_system_p1:
+    external: true
